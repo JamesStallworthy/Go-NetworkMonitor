@@ -1,0 +1,7 @@
+{
+	"endpointurl":"www.google.com",
+	"influxdburl":"example.com:8086",
+	"influxdbuser":"username",
+	"influxdbpassword":"password",
+	"location":"home"
+}

@@ -19,3 +19,4 @@
 .service
 go-networkmonitor.service
 networkmonitor
+settings.json

@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"time"
 
@@ -16,10 +18,16 @@ func main() {
 	influxUserPtr := flag.String("influxdb-user", "username", "influx username")
 	influxPasswordPtr := flag.String("influxdb-password", "password", "influx password")
 	locationPtr := flag.String("location", "home", "location where this service is being run from")
+	configFile := flag.String("config-file", "./settings.json", "file to load settings from instead of passing via cmdline paramter. This will overwrite all other param values")
 
 	flag.Parse()
 
+	if configFile != nil {
+		loadConfigFile(*configFile, urlPtr, influxURLPtr, influxUserPtr, influxPasswordPtr, locationPtr)
+	}
+
 	host, err := url.Parse(fmt.Sprintf("https://%s", *influxURLPtr))
+
 	if err != nil {
 		panic(err)
 	}
@@ -32,6 +40,36 @@ func main() {
 
 	con, err := client.NewClient(conf)
 	forever(*con, *urlPtr, *locationPtr)
+}
+
+func loadConfigFile(settingsFile string, urlPtr *string, influxURLPtr *string, influxUserPtr *string, influxPasswordPtr *string, locationPtr *string) {
+	type SettingsConfig struct {
+		Endpointurl      string `json:"endpointurl"`
+		Influxdburl      string `json:"influxdburl"`
+		Influxdbuser     string `json:"influxdbuser"`
+		Influxdbpassword string `json:"influxdbpassword"`
+		Location         string `json:"location"`
+	}
+
+	// read file
+	data, err := ioutil.ReadFile(settingsFile)
+	if err != nil {
+		fmt.Print(err)
+	}
+
+	// json data
+	var obj SettingsConfig
+
+	// unmarshall it
+	err = json.Unmarshal(data, &obj)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	*urlPtr = obj.Endpointurl
+	*influxURLPtr = obj.Influxdburl
+	*influxUserPtr = obj.Influxdbuser
+	*influxPasswordPtr = obj.Influxdbpassword
+	*locationPtr = obj.Location
 }
 
 func forever(con client.Client, url string, location string) {
